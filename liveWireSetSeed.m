@@ -33,8 +33,8 @@ function [parametersReturn] = liveWireSetSeed
         whereFrom(r,c) = width*(r-1)+c-1;
         disp('Into setting seed');
         [visited,pixelCosts] = updateCosts(width,height,r,c,0,visited,pixelCosts,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
-         tempFig = figure('position',[10 10 1000 1000]);
-         imageHandle = imshow(mat2gray(visited));
+%          tempFig = figure('position',[10 10 1000 1000]);
+%          imageHandle = imshow(mat2gray(visited));
         while(length(pixelCosts) > 0 && keepGoing == 1)
             %pixelCosts
             nextPixel = peekQueue(pixelCosts);
@@ -46,8 +46,8 @@ function [parametersReturn] = liveWireSetSeed
             [visited,pixelCosts] = updateCosts(width,height,nextr, nextc, nextPixel.cost,visited,pixelCosts,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
             %removes pixels that are already visited and went to the queue
             goOn = 1;
-             set(imageHandle,'CData',mat2gray(visited));
-             drawnow
+%              set(imageHandle,'CData',mat2gray(visited));
+%              drawnow
             while goOn ==1 && keepGoing == 1
                 nextPixel = peekQueue(pixelCosts);
                 if( ~isstruct(nextPixel))
@@ -68,8 +68,9 @@ function [parametersReturn] = liveWireSetSeed
             end
 
         end
+        disp('Stopped calculating costs');
         seedRunning = 0;
-        close(tempFig);
+%         close(tempFig);
         while length(pixelCosts) > 0
             pixelCosts = pollQueue(pixelCosts); 
         end       
@@ -92,11 +93,14 @@ function [parametersReturn] = liveWireSetSeed
         end
     end
     %Calculate costs
+    %Added constraint that only pixels less than 10 pixels away are
+    %considered
     function [visited,pixelCosts] = updateCosts(width,height,r,c,mycost,visited,pixelCosts,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw)
+        maxDist = 20;
         pixelCosts = pollQueue(pixelCosts);
         visited(r,c) = 1;
         %upper right (r-1,c+1)
-        if (c < width ) && (r > 1)
+        if (c < width ) && (r > 1) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (r-1-1)*width+c+1-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r-1,c+1,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -104,7 +108,7 @@ function [parametersReturn] = liveWireSetSeed
         end
         
         %upper left (r-1,c-1)
-        if (c > 1) && (r > 1)
+        if (c > 1) && (r > 1) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c-1)+(r-1-1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r-1,c-1,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -112,7 +116,7 @@ function [parametersReturn] = liveWireSetSeed
         end
 
 		%down right (r+1,c+1)
-        if (c < width) && (r < height)
+        if (c < width) && (r < height) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c+1)+(r-1+1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r+1,c+1,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -120,7 +124,7 @@ function [parametersReturn] = liveWireSetSeed
         end
         
 		%down left (r+1,c-1)
-        if (c > 1) && (r < height)
+        if (c > 1) && (r < height) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c-1)+(r-1+1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r+1,c-1,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -128,7 +132,7 @@ function [parametersReturn] = liveWireSetSeed
         end
 		
 		%update left cost (r,c-1)
-        if (c > 1)
+        if (c > 1) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c-1)+(r-1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r,c-1,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -136,7 +140,7 @@ function [parametersReturn] = liveWireSetSeed
         end
 
         %update right cost (r,c+1)
-        if (c < width)
+        if (c < width) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c+1)+(r-1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r,c+1,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -144,7 +148,7 @@ function [parametersReturn] = liveWireSetSeed
         end
 		
 		%update up cost (r-1,c)
-        if (r > 1)
+        if (r > 1) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c)+(r-1-1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r-1,c,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);
@@ -152,7 +156,7 @@ function [parametersReturn] = liveWireSetSeed
         end
         
 		%update down cost (r+1,c)
-        if (r < height)
+        if (r < height) && (sqrt((parameters.seedPoint(1)-r)^2+(parameters.seedPoint(2)-c)^2)<=maxDist)
            indeksi = length(pixelCosts)+1;
            pixelCosts(indeksi).index = (c)+(r+1-1)*width-1;
            pixelCosts(indeksi).cost = mycost+edgeCost(r,c,r+1,c,gradientx,gradienty,gradientr,grmin,grmax,gw,dw,ew,pw);

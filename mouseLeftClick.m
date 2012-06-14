@@ -19,7 +19,7 @@ function mouseLeftClick(objH,evt)
         while seedRunning == 1
            pause(0.1);
         end
-        
+        disp('Done waiting previous running seed');
         seedRunning = 1;
         keepGoing = 1;
         disp('Seed running');
