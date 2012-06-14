@@ -3,7 +3,7 @@ MatlabLiveWire
 
 LiveWire on matlab. 
 Using IvusSnakes (http://ivussnakes.sourceforge.net/) ImageJ plugin to do the calculations. 
-The initial version was a port of the aforementioned plugin, but it was too slow for any useful application and I went back to using Java to do the hard lifting.
+The initial version was a port of the aforementioned plugin, but it was too slow for any useful application (removed at f33a5a6 commit) and I went back to using Java to do the hard lifting.
 
 A work in progress...
 
