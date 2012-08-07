@@ -2,6 +2,7 @@ function testJava
     
     close all;
     clear all;
+    clc;
     javaaddpath('.');
     global lineHandle returnedPath liveWireEngine imagePixels;
     %dicomFileIn = 'IM000~10';
@@ -9,19 +10,25 @@ function testJava
     dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\livewireData\10022712\18830471';
     imageInfo = dicominfo(dicomFileIn);
     imagePixels = double(dicomread(imageInfo));
+    %Filter with Gaussian
+    gaus = fspecial('gaussian',3);
+    imagePixels = imfilter(imagePixels,gaus,'replicate');
     liveWireEngine = javaEngineLiveWire.LiveWireCosts(reshape(imagePixels,1,size(imagePixels,1)*size(imagePixels,2)),size(imagePixels,1),size(imagePixels,2));
     gradientR = liveWireEngine.getGradientR();
     figure;
-    subplot(1,2,1);
+    subplot(1,3,1);
     imshow(imagePixels,[]);
-    subplot(1,2,2);
+    subplot(1,3,2);
     imshow(gradientR,[]);
-    
-    figure
-    imshow(mat2gray(imagePixels));
-    hold on;
-    set(gcf,'position',[10,10,1000,1000]);
-    set(gcf,'WindowButtonUpFcn',@mouseLeftClick);  %%LiveWire init and setting points are handled with callbacks
-    disp('Callback set');
+    laplacianR = liveWireEngine.getLaplacian();
+    subplot(1,3,3);
+    imshow(laplacianR,[]);
+%     keyboard
+%     figure
+%     imshow(mat2gray(imagePixels));
+%     hold on;
+%     set(gcf,'position',[10,10,1000,1000]);
+%     set(gcf,'WindowButtonUpFcn',@mouseLeftClick);  %%LiveWire init and setting points are handled with callbacks
+%     disp('Callback set');
 
 end

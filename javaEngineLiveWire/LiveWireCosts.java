@@ -4,7 +4,8 @@
 	provide reasonable speed -> replaced Matlab with java to
 	speed up things...
 	
-	Changed the implementation back to the one suggested in Barret1997
+	Changed the implementation back to the one suggested in Barret & Mortensen 1997.
+	Interactive live-wire boundary extraction. Medical Image Analysis (1996/7) volume 1, number 4, pp 331–341.
 	
 	Use:
 		Create object with pixel data and image width and size:
@@ -30,6 +31,7 @@ public class LiveWireCosts implements Runnable{
     //it is oriented: X = LEFT TO RIGHT
     //                Y = UP   TO DOWN
     double[] gradientr; //stores image gradient RESULTANT modulus 
+	double[] laplacian;
     double grmin;//gradient global minimum
     double grmax;//gradient global maximum
 
@@ -109,48 +111,105 @@ public class LiveWireCosts implements Runnable{
 			}
 		}
 
-
 		grmin = gradientr[0];
 		grmax = gradientr[0];
 		for(int i=0;i< height*width;i++){
 			if(gradientr[i]<grmin) grmin=gradientr[i];
 			if(gradientr[i]>grmax) grmax=gradientr[i];
 		}
-		//TAKE ME OUT!!!
-		
-		//	grmin += 600;
-
-
     }
 
-    public void getGradientX(double[] mat){
-		for(int i=0;i<height;i++){
-			for(int j=0;j<width;j++){
-			//		System.out.println(gradientx[(i*width+j)]);
-			mat[i*width+j]= gradientx[i*width+j];
-			}
-		}
-    }
-    public void getGradientY(double[] mat){
-		for(int i=0;i<height;i++){
-			for(int j=0;j<width;j++){
-			//		System.out.println(gradientx[(i*width+j)]);
-			mat[i*width+j]= gradienty[i*width+j];
-			}
-		}
-    }
     public double[][] getGradientR(){
 		double[][] gradientR = new double[width][height];
 		for(int i=0;i<height;i++){
 			for(int j=0;j<width;j++){
-			//		System.out.println(gradientx[(i*width+j)]);
-			//mat[i*width+j]= gradientr[i*width+j];
 				gradientR[j][i] = gradientr[i*width+j];
 			}
 		}
 		return gradientR;
     }
+	
+	public double[][] getLaplacian(){
+		double[][] laplacianR = new double[width][height];
+		for(int i=0;i<height;i++){
+			for(int j=0;j<width;j++){
+				laplacianR[j][i] = laplacian[i*width+j];
+			}
+		}
+		return laplacianR;
+    }
 
+	    //initializes gradient vector
+    private void initLaplacian(){
+		laplacian = new double[height*width];
+		
+		//Using finite differences
+		//convolute with
+		//   
+		//     |0	1 0|
+		//Gx = |1	-4 1|
+		//     |0	1 0|
+		double[][] laplacianKernel = {{0,1,0},
+									{1,-4,1},
+									{0,1,0}};
+
+		for(int i=1;i<width-1;i++){
+			for(int j=1;j<height-1;j++){
+				for (int j2=-1;j2<=1;++j2){
+					for (int i2=-1;i2<=1;++i2){
+						laplacian[toIndex(i,j)] += imagePixels[toIndex(i+i2,j+j2)]*laplacianKernel[i2+1][j2+1];
+					}
+				}
+			}
+		}
+
+		/*Search for zero crossing to binarize the result*/
+		double[] tempLap = new double[laplacian.length];
+		int[][] neighbourhood = new int[8][2];	//8 connected neighbourhood
+		for(int i=1;i<width-1;i++){
+			for(int j=1;j<height-1;j++){
+				tempLap[toIndex(i,j)] = 1;	
+				if (laplacian[toIndex(i,j)] == 0){	/*No need to check neighbours*/
+					tempLap[toIndex(i,j)] = 0;	
+				}else{	/*Check neighbours*/
+					//Check 8-connected neighbour
+					for (int th = 0; th<8;++th){
+						neighbourhood[th][0] = i+(int) Math.round(Math.cos((double) th));
+						neighbourhood[th][1] = j+(int) Math.round(Math.sin((double) th));
+					}
+					int[] centre = {i,j};
+					tempLap = checkNeighbours(tempLap,neighbourhood,centre);
+					
+				}
+			}
+		}
+		
+		/*OverWrite Laplacian*/
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				laplacian[toIndex(i,j)]  = tempLap[toIndex(i,j)];	
+			}
+		}
+    }
+	
+		/*Update pixel queue*/
+	protected double[] checkNeighbours(double[] tempLap, int[][] neighbourhood,int[] centre){
+		int[] coordinates;
+		double[] lbpHist;
+        for (int r = 0;r<neighbourhood.length;++r){
+			coordinates = neighbourhood[r];
+            if (Math.signum(laplacian[toIndex(coordinates[0],coordinates[1])]) != Math.signum(laplacian[toIndex(centre[0],centre[1])])){ /*Signs differ, mark border*/
+				if (Math.abs(laplacian[toIndex(centre[0],centre[1])]) < Math.abs(laplacian[toIndex(coordinates[0],coordinates[1])])){
+					tempLap[toIndex(centre[0],centre[1])] = 0;
+			    }else{
+					tempLap[toIndex(coordinates[0],coordinates[1])] = 0;
+				}
+            }
+        }
+		return tempLap;
+	}
+
+	
     //initializes Dijkstra with the image
     public LiveWireCosts(double[] image,int x, int y){
  
@@ -177,7 +236,8 @@ public class LiveWireCosts implements Runnable{
 			visited    [j*x+i] = false;
 			}
 		}
-		initGradient();	
+		initGradient();
+		initLaplacian();
 		//inits the thread
 		myThread = new Thread(this);
 
