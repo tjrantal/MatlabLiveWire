@@ -4,6 +4,8 @@
 	provide reasonable speed -> replaced Matlab with java to
 	speed up things...
 	
+	Changed the implementation back to the one suggested in Barret1997
+	
 	Use:
 		Create object with pixel data and image width and size:
 			object = LiveWireCosts(pixelMatrix,width,height);
@@ -15,15 +17,12 @@ package javaEngineLiveWire;
 
 import java.util.PriorityQueue;
 
-/**
- * @author baggio
- *
- */
+
 public class LiveWireCosts implements Runnable{
 	
 	
 	
-    byte[] imagePixels; //stores Pixels from original image
+    double[] imagePixels; //stores Pixels from original image
     int[] imageCosts; //stores Costs for every pixel
     PriorityQueue<PixelNode> pixelCosts;
     double[] gradientx; //stores image gradient modulus 
@@ -47,6 +46,7 @@ public class LiveWireCosts implements Runnable{
     
     private double gw;//Gradient Magnitude Weight - set by setGWeight
     private double dw;//Gradient Direction Weight - set by setDWeight
+	private double zw;//Exponential        Weight - set by setEWeight
     private double ew;//Exponential        Weight - set by setEWeight
     private double pw;//Exponential Potence Weight - set by setPWeight
     
@@ -74,9 +74,9 @@ public class LiveWireCosts implements Runnable{
 			for(int j=0;j<height;j++){
 			if((i>0)&&(i<width-1)&&(j>0)&&(j<height-1)){
 				gradientx[toIndex(i,j)] =
-				-1*(imagePixels[toIndex(i-1,j-1)] & 0xff) +1*(imagePixels[toIndex(i+1,j-1)] & 0xff)
-				-2*(imagePixels[toIndex(i-1,j  )] & 0xff) +2*(imagePixels[toIndex(i+1,j  )] & 0xff)
-				-1*(imagePixels[toIndex(i-1,j+1)] & 0xff) +1*(imagePixels[toIndex(i+1,j+1)] & 0xff);
+				-1*(imagePixels[toIndex(i-1,j-1)]) +1*(imagePixels[toIndex(i+1,j-1)])
+				-2*(imagePixels[toIndex(i-1,j  )]) +2*(imagePixels[toIndex(i+1,j  )])
+				-1*(imagePixels[toIndex(i-1,j+1)]) +1*(imagePixels[toIndex(i+1,j+1)]);
 			}
 			}
 		}
@@ -91,9 +91,9 @@ public class LiveWireCosts implements Runnable{
 			for(int j=0;j<height;j++){
 			if((i>0)&&(i<width-1)&&(j>0)&&(j<height-1)){
 				gradienty[toIndex(i,j)] = 
-				+1*(imagePixels[toIndex(i-1,j-1)] & 0xff) -1*(imagePixels[toIndex(i-1,j+1)] & 0xff)
-				+2*(imagePixels[toIndex(i  ,j-1)] & 0xff) -2*(imagePixels[toIndex(i  ,j+1)] & 0xff)
-				+1*(imagePixels[toIndex(i+1,j-1)] & 0xff) -1*(imagePixels[toIndex(i+1,j+1)] & 0xff);
+				+1*(imagePixels[toIndex(i-1,j-1)]) -1*(imagePixels[toIndex(i-1,j+1)])
+				+2*(imagePixels[toIndex(i  ,j-1)]) -2*(imagePixels[toIndex(i  ,j+1)])
+				+1*(imagePixels[toIndex(i+1,j-1)]) -1*(imagePixels[toIndex(i+1,j+1)]);
 			}
 			}
 		}
@@ -139,30 +139,29 @@ public class LiveWireCosts implements Runnable{
 			}
 		}
     }
-    public void getGradientR(double[] mat){
+    public double[][] getGradientR(){
+		double[][] gradientR = new double[width][height];
 		for(int i=0;i<height;i++){
 			for(int j=0;j<width;j++){
 			//		System.out.println(gradientx[(i*width+j)]);
-			mat[i*width+j]= gradientr[i*width+j];
+			//mat[i*width+j]= gradientr[i*width+j];
+				gradientR[j][i] = gradientr[i*width+j];
 			}
 		}
+		return gradientR;
     }
 
     //initializes Dijkstra with the image
-    public LiveWireCosts(byte[] image,int x, int y){
-    	 
-    	
-    	
-    	//initializes weights for edge cost
+    public LiveWireCosts(double[] image,int x, int y){
+ 
+		//initializes weights for edge cost taken from Barret 1997
     	//these are default values
     	gw = 0.43;
+		zw = 0.43;
     	dw = 0.13;
-    	ew = 0.0;
-    	pw = 30;
     	
 		//initializes all other matrices
-		imagePixels = new byte[x*y];
-		//	imageCosts  = new int [x*y];
+		imagePixels = new double[x*y];
 		pixelCosts = new PriorityQueue<PixelNode>();
 		whereFrom   = new int [x*y];
 		visited     = new boolean[x*y];
@@ -176,9 +175,7 @@ public class LiveWireCosts implements Runnable{
 				image[j*x+i];		
 			//imageCosts [j*x+i] = INF;
 			visited    [j*x+i] = false;
-			//		System.out.print((imagePixels[j*x+i]&0xff)+ " ");
 			}
-			//	    System.out.println("");
 		}
 		initGradient();	
 		//inits the thread
