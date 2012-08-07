@@ -24,11 +24,11 @@ function testJava
     subplot(1,3,3);
     imshow(laplacianR,[]);
 %     keyboard
-%     figure
-%     imshow(mat2gray(imagePixels));
-%     hold on;
-%     set(gcf,'position',[10,10,1000,1000]);
-%     set(gcf,'WindowButtonUpFcn',@mouseLeftClick);  %%LiveWire init and setting points are handled with callbacks
-%     disp('Callback set');
+    figure
+    imshow(mat2gray(imagePixels));
+    hold on;
+    set(gcf,'position',[10,10,1000,1000]);
+    set(gcf,'WindowButtonUpFcn',@mouseLeftClick);  %%LiveWire init and setting points are handled with callbacks
+    disp('Callback set');
 
 end

@@ -111,13 +111,19 @@ public class LiveWireCosts implements Runnable{
 			}
 		}
 
-		grmin = gradientr[0];
-		grmax = gradientr[0];
-		for(int i=0;i< height*width;i++){
-			if(gradientr[i]<grmin) grmin=gradientr[i];
-			if(gradientr[i]>grmax) grmax=gradientr[i];
+		double grMax = arrMax(gradientr);
+		for(int i=0;i< gradientr.length;++i){
+			gradientr[i] = 1-gradientr[i]/grMax;
 		}
     }
+	
+	public static double arrMax(double[] matrix){
+		double maximum = Double.NEGATIVE_INFINITY;
+		for (int i  = 0; i< matrix.length;++i){
+			if (matrix[i] > maximum) maximum =  matrix[i];
+		}
+		return maximum;
+	}
 
     public double[][] getGradientR(){
 		double[][] gradientR = new double[width][height];
@@ -242,10 +248,17 @@ public class LiveWireCosts implements Runnable{
 		myThread = new Thread(this);
 
     }    
-    //returns de cost of going from sx,sy to dx,dy
+	
+    //returns thee cost of going from sx,sy to dx,dy
     private double edgeCost(int sx,int sy,int dx,int dy){
 		//fg is the Gradient Magnitude
-
+		
+		
+		/*Debugging, test liveWire without gradient direction...*/
+		return gw*gradientr[toIndex(dx,dy)]+zw*laplacian[toIndex(dx,dy)];
+		
+		/*Disabled...*/
+		/*
 		//we are dividing by sqrt(2) so that the value won't pass 1
 		//as is stated in United Snakes formule 36
 		
@@ -312,72 +325,50 @@ public class LiveWireCosts implements Runnable{
 		
 		double fd = 2.0/(3*Math.PI)*(Math.acos(dppq)+Math.acos(dqpq));	    
 
-		/*	System.out.println("Fd "+ fd + " Fg " + fg + " acos dppq " + Math.acos(dppq) + " acos dqpq " + Math.acos(dqpq)
-				   + " Dp (" + Dp.getX() + "," + Dp.getY() +") DpN (" + DpN.getX() +"," + DpN.getY() + ")"  
-				   + " p (" +p.getX()+ ","+p.getY() + ") q(" +q.getX()+","+q.getY()+") " 
-				   + "Gradp(" + gradientx[toIndex(sx,sy)]+ ","+gradienty[toIndex(sx,sy)]+ ") " 
-				   + "Gradq(" + gradientx[toIndex(dx,dy)]+ ","+gradienty[toIndex(dx,dy)]+ ")");*/
-
 		//return Math.abs(imagePixels[toIndex(dx,dy)]-imagePixels[toIndex(sx,sy)]);
 		return ew*fe+gw*fg+dw*fd;//+0.2*Math.sqrt( (dx-sx)*(dx-sx) + (dy-sy)*(dy-sy));
-		
+		*/
     }
-    //sets weights for fg and fd
-    public void setGWeight(double pgw){
-    	gw = pgw;
-    }
-    public void setDWeight(double pdw){
-    	dw = pdw;
-    }
-    public void setEWeight(double pew){
-    	ew = pew;
-    }
-    public void setPWeight(double ppw){
-    	pw = ppw;
-    }
-    
+
     //updates Costs and Paths for a given point
     //actuates over 8 directions N, NE, E, SE, S, SW, W, NW
     private void updateCosts(int x,int y,double mycost){
+		visited[toIndex(x,y)] = true;
+		pixelCosts.poll();
 
-	visited[toIndex(x,y)] = true;
-	pixelCosts.poll();
+		//upper right
+		if((x< width-1)&&(y>0)){
+			pixelCosts.add(new PixelNode(toIndex(x+1,y-1), mycost+edgeCost(x,y,x+1,y-1),toIndex(x,y)));	    
+		}
+		//upper left
+		if((x>0)&&(y>0)){
+			pixelCosts.add(new PixelNode(toIndex(x-1,y-1), mycost+edgeCost(x,y,x-1,y-1),toIndex(x,y)));	    
+		}
+		//down right
+		if((x< width-1)&&(y<height-1)){
+			pixelCosts.add(new PixelNode(toIndex(x+1,y+1), mycost+edgeCost(x,y,x+1,y+1),toIndex(x,y)));	    
+		}
+		//down left
+		if((x>0)&&(y<height-1)){
+			pixelCosts.add(new PixelNode(toIndex(x-1,y+1), mycost+edgeCost(x,y,x-1,y+1),toIndex(x,y)));	    
+		}
 
-//	mycost = mycost;
-	//upper right
-	if((x< width-1)&&(y>0)){
-	    pixelCosts.add(new PixelNode(toIndex(x+1,y-1), mycost+edgeCost(x,y,x+1,y-1),toIndex(x,y)));	    
-	}
-	//upper left
-	if((x>0)&&(y>0)){
-	    pixelCosts.add(new PixelNode(toIndex(x-1,y-1), mycost+edgeCost(x,y,x-1,y-1),toIndex(x,y)));	    
-	}
-	//down right
-	if((x< width-1)&&(y<height-1)){
-	    pixelCosts.add(new PixelNode(toIndex(x+1,y+1), mycost+edgeCost(x,y,x+1,y+1),toIndex(x,y)));	    
-	}
-	//down left
-	if((x>0)&&(y<height-1)){
-	    pixelCosts.add(new PixelNode(toIndex(x-1,y+1), mycost+edgeCost(x,y,x-1,y+1),toIndex(x,y)));	    
-	}
-
-	//update left cost
-	if(x>0){
-	    pixelCosts.add(new PixelNode(toIndex(x-1,y), mycost+edgeCost(x,y,x-1,y),toIndex(x,y)));	    
-	}
-	//update right cost
-	if(x<width-1){
-	    pixelCosts.add(new PixelNode(toIndex(x+1,y), mycost+edgeCost(x,y,x+1,y),toIndex(x,y)));
-	}
-	
-	//update up cost
-	if(y>0){
-	    pixelCosts.add(new PixelNode(toIndex(x,y-1), mycost+edgeCost(x,y,x,y-1),toIndex(x,y)));
-	}
-	    //update down cost
-	if(y<height-1){
-	    pixelCosts.add(new PixelNode(toIndex(x,y+1), mycost+edgeCost(x,y,x,y+1),toIndex(x,y)));
-	}
+		//update left cost
+		if(x>0){
+			pixelCosts.add(new PixelNode(toIndex(x-1,y), mycost+edgeCost(x,y,x-1,y),toIndex(x,y)));	    
+		}
+		//update right cost
+		if(x<width-1){
+			pixelCosts.add(new PixelNode(toIndex(x+1,y), mycost+edgeCost(x,y,x+1,y),toIndex(x,y)));
+		}
+		//update up cost
+		if(y>0){
+			pixelCosts.add(new PixelNode(toIndex(x,y-1), mycost+edgeCost(x,y,x,y-1),toIndex(x,y)));
+		}
+		//update down cost
+		if(y<height-1){
+			pixelCosts.add(new PixelNode(toIndex(x,y+1), mycost+edgeCost(x,y,x,y+1),toIndex(x,y)));
+		}
     }
 
     // returns index pointing to next node to be visited
@@ -448,11 +439,11 @@ public class LiveWireCosts implements Runnable{
     	//path is from last point to first
     	//we need to invert it
 	//	System.out.println("Caminho ");
-		int[][] pathToReturn = new int[2][count+1];
+		int[][] pathToReturn = new int[count+1][2];
     	for(int i=0;i<=count;i++){
 
-    		pathToReturn[0][i]= tempx[count-i];
-    		pathToReturn[1][i]=tempy[count-i];    	
+    		pathToReturn[i][0]= tempx[count-i];
+    		pathToReturn[i][1]=tempy[count-i];    	
 		//System.out.println("( "+vx[i] + " , " + vy[i] + " )");
     	}		    	
     	
@@ -489,14 +480,12 @@ public class LiveWireCosts implements Runnable{
 		sx = x;
 		sy = y;
 		
-		for(int i=0;i<height*width;i++){
-			//		imageCosts[i]  = INF;
+		for(int i=0;i<height*width;++i){
 			visited[i]  = false;
 		}
 		
 		
 		visited   [toIndex(x,y)] = true; //mark as visited
-		//	imageCosts[toIndex(x,y)] = 0; //sets initial point with zero cost
 		whereFrom [toIndex(x,y)] = toIndex(x,y);
 
 		
@@ -533,38 +522,7 @@ public class LiveWireCosts implements Runnable{
 		}
 		while(pixelCosts.peek()!=null)
 			pixelCosts.poll();
-		
-		//	System.out.println("Point set.......");
-		/*
-		System.out.println("");
-		for(int j=0;j<height;j++){
-			for(int i=0;i<width;i++){
-			System.out.print(imageCosts[j*width+i]+ " ");
-			}
-			System.out.println("");
-			}
-		
-		System.out.println("Caminhos");
-		for(int j=0;j<height;j++){
-			for(int i=0;i<width;i++){
-			System.out.print("( " + whereFrom[j*width+i]%width + ", " + whereFrom[j*width+i]/height + ") ");
-			}
-			System.out.println("");
-			}*/
-		
     }
-
-	public int getTx() {
-		return tx;
-	}
-
-	public int getTy() {
-		return ty;
-	}
-
-
-		    	
-
 
 }
 

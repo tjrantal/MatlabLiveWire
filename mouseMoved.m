@@ -12,7 +12,7 @@ function mouseMoved(objH,evt)
         end
         disp(['Target set']);
         %Display image
-        set(lineHandle,'XData',returnedPath(1,:),'YData',returnedPath(2,:));
+        set(lineHandle,'XData',returnedPath(:,1),'YData',returnedPath(:,2));
         drawnow;
     end
 end
