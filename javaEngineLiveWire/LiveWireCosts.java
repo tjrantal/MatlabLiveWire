@@ -35,7 +35,7 @@ public class LiveWireCosts implements Runnable{
     public double[][] gradientr; //stores image gradient RESULTANT modulus 
 	public double[][] laplacian;
 
-    int[][][] whereFrom;  //stores where from path started
+    public int[][][] whereFrom;  //stores where from path started
     boolean[][] visited; //stores whether the node was marked or not
     int rows;
     int columns;
@@ -222,12 +222,6 @@ public class LiveWireCosts implements Runnable{
     //returns thee cost of going from sx,sy to dx,dy
     private double edgeCost(int sr,int sc,int dr,int dc){
 		//fg is the Gradient Magnitude
-		System.out.println("dr "+dr+" dc "+dc
-							+" gradR "+gradientr.length
-							+" gradC "+gradientr[0].length
-							+" lapR "+laplacian.length
-							+" lapC "+laplacian[0].length);
-		
 		/*Debugging, test liveWire without gradient direction...*/
 		return gw*gradientr[dr][dc]+zw*laplacian[dr][dc];
 		
@@ -320,8 +314,12 @@ public class LiveWireCosts implements Runnable{
 			coordinates = neighbourhood[i];
             if (coordinates[0] >= 0 && coordinates[0] <rows &&
 				coordinates[1] >= 0 && coordinates[1] <columns){
-				int[] fromCoords = {r,c};
-				int[] pixelCoords = {neighbourhood[i][0],neighbourhood[i][1]};
+				int[] fromCoords = new int[2];
+				fromCoords[0] = r;
+				fromCoords[1] = c;
+				int[] pixelCoords = new int[2];
+				pixelCoords[0] = neighbourhood[i][0];
+				pixelCoords[1] = neighbourhood[i][1];
 				pixelCosts.add(new PixelNode(pixelCoords, mycost+edgeCost(r,c,neighbourhood[i][0],neighbourhood[i][1]),fromCoords));	    
             }
         }
@@ -345,16 +343,17 @@ public class LiveWireCosts implements Runnable{
     	int nextr;
     	int nextc;
 		pathCoordinates[length][0] = r;
-		pathCoordinates[length][0] = c;
+		pathCoordinates[length][1] = c;
+		//System.out.println("sr "+sr+" sc "+sc);
     	do{ //while we haven't found the seed	
     		++length;
-    		nextr = whereFrom[myr][c][0];
-    		nextc = whereFrom[myc][c][1];
+    		nextr = whereFrom[myr][myc][0];
+    		nextc = whereFrom[myr][myc][1];
     		myr = nextr;
     		myc = nextc;
 			pathCoordinates[length][0] = nextr;
 			pathCoordinates[length][1] = nextc;
-    		
+    		//System.out.println("nr "+nextr+" nc "+nextc);
     	}while (!((myr==sr)&&(myc==sc)));
     	
     	//path is from last point to first
@@ -395,7 +394,7 @@ public class LiveWireCosts implements Runnable{
 		int nextR;
 		int nextC;
 		sr = r;
-		sr = c;
+		sc = c;
 		
 		for(int i=0;i<rows;i++){
 			for(int j=0;j<columns;j++){	    	

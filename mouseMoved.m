@@ -6,13 +6,16 @@ function mouseMoved(objH,evt)
         disp('Out of image');
     else
         disp(['Set target']);
-        returnedPath = liveWireEngine.returnPath(targetPoint(2),targetPoint(1)); %N.B. row, column!!!
+%         whereFrom = liveWireEngine.whereFrom;
+        returnedPath = liveWireEngine.returnPath(targetPoint(2)-1,targetPoint(1)-1); %N.B. row, column!!!
+%         keyboard;
         if isempty(returnedPath)
+            disp(['Not there yet']);
            return; 
         end
         disp(['Target set']);
         %Display image
-        set(lineHandle,'XData',returnedPath(:,2),'YData',returnedPath(:,1)); %N.B. row, column!!!
+        set(lineHandle,'XData',returnedPath(:,2)+1,'YData',returnedPath(:,1)+1); %N.B. row, column and index differs by 1!!!
         drawnow;
     end
 end

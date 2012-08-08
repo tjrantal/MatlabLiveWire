@@ -17,7 +17,7 @@ function mouseLeftClick(objH,evt)
         drawnow;
         disp('Seed set');
         disp('Seed running');
-        liveWireEngine.setSeed(seedPoint(2),seedPoint(1));    %N.B. row, column!!!
+        liveWireEngine.setSeed(seedPoint(2)-1,seedPoint(1)-1);    %N.B. row, column and index differs by 1!!!
         disp('Seed set ready');
     end
 end
