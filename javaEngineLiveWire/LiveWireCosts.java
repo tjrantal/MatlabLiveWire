@@ -222,97 +222,29 @@ public class LiveWireCosts implements Runnable{
 	
 	/*Barret 1997 eq 3 & 4*/
 	private double edgeDirectionCost(int sr,int sc,int dr,int dc){
-		Vector2d Dp = new Vector2d(gradientrows[sr][sc],-gradientcolumns[sr][sc]);
-		Vector2d Dq = new Vector2d(gradientrows[dr][dc],-gradientcolumns[dr][dc]);
+		Vector2d Dp = (new Vector2d(gradientrows[sr][sc],-gradientcolumns[sr][sc])).getUnit();
+		Vector2d Dq = (new Vector2d(gradientrows[dr][dc],-gradientcolumns[dr][dc])).getUnit();
 		Vector2d p = new Vector2d(sr,sc);
 		Vector2d q = new Vector2d(dr,dc);
 		Vector2d L;
 		if (Dp.dotProduct(q.sub(p)) >= 0){
-			L = q.sub(p);
+			L = q.sub(p).getUnit();
 		}else{
-			L = p.sub(q);
+			L = p.sub(q).getUnit();
 		}
-		return 2.0/(3.0*Math.PI)*(Math.acos(Dp.dotProduct(L))+Math.acos(L.dotProduct(Dq)));
+		double edgeDirectionCostValue = 2.0/(3.0*Math.PI)*(Math.acos(Dp.dotProduct(L))+Math.acos(L.dotProduct(Dq)));
+		return edgeDirectionCostValue;
 	
 	}
     //returns thee cost of going from sx,sy to dx,dy
     private double edgeCost(int sr,int sc,int dr,int dc){
 		//fg is the Gradient Magnitude
 		/*Debugging, test liveWire without gradient direction...*/
-		return gw*gradientr[dr][dc]+zw*laplacian[dr][dc];
-		
-		/*Disabled...*/
-		/*
-		//we are dividing by sqrt(2) so that the value won't pass 1
-		//as is stated in United Snakes formule 36
-		
-		double fg = (1.0/Math.sqrt(2)*Math.sqrt( (dx-sx)*(dx-sx) + (dy-sy)*(dy-sy))* 
-			(1 - ((gradientr[toIndex(dx,dy)]-grmin)/(grmax-grmin))));
-
-		if(grmin==grmax) 
-			fg= (1.0/Math.sqrt(2)*Math.sqrt( (dx-sx)*(dx-sx) + (dy-sy)*(dy-sy)));
-
-
-		//this parameter is an attempt to find edges in IVUS images	
-		double x = (gradientr[toIndex(dx,dy)]-grmin)/(grmax-grmin);
-		double fe = Math.exp(-pw*x)*fg;
-
-
-		//	System.out.println("Fg " + fg +" gradientr " + gradientr[toIndex(dx,dy)] + " grmin " + grmin + " grmax " + grmax);
-		//fd id the Gradient Direction
-
-		//CHECK ME OUT: The part of fd has not been much tested
-		//if someone wishes to spend some time testing it, it'd be a great idea
-
-		//Dp is the unit vector of the gradient direction at pixel p (sx,sy)
-		//this is defined near formule 37 in United Snakes
-		Vector2d GradVector = new Vector2d(gradientrows[toIndex(sx,sy)],gradientcolumns[toIndex(sx,sy)]);
-		Vector2d Dp = GradVector.getUnit();
-		//DpN is the normal vector to Dp
-		Vector2d DpN = new Vector2d(Dp.getNormal());
-		//Lpq is the normalized biderectional link between pixels p and q (United Snakes formule 38)
-		Vector2d Lpq = new Vector2d();
-		Vector2d p = new Vector2d(sx,sy);
-		Vector2d q = new Vector2d(dx,dy);
-		
-		//remember that y is upside down... we need to invert the y term in pq
-		
-		Vector2d myPQ = new Vector2d ( dx - sx, sy - dy);
-		
-		
-		if(DpN.dotProduct( myPQ ) >=0 ){
-			Lpq = myPQ.getUnit(); // (q-p)/||p-q|| 
-		}
-		else{	    
-			Lpq = myPQ.getUnit(); // (p-q)/||p-q||
-		}
-		//dppq = DpN . Lpq 
-		double dppq = DpN.dotProduct(Lpq);
-		//dqpq = Lpq . DpN
-		Vector2d GradVectorq = new Vector2d(gradientrows[toIndex(dx,dy)],gradientcolumns[toIndex(dx,dy)]);
-		Vector2d Dq = GradVectorq.getUnit();
-		Vector2d DqN = new Vector2d(Dq.getNormal());
-		double dqpq = Lpq.dotProduct(DqN);
-
-		//United Snakes formule 37
-		//I have found a problem here... 
-		//When the gradient is near zero in the place, when getting the unit vector, 
-		//it becomes NaN, because we are dividing something for about zero... 
-		//but the value of fd should be as high as possible (we are over an edge)
-		//so, when asking for unit vectors, we check for components x and y. If they are
-		//too small, we return a vector (1,0)
-		if((Math.abs(GradVector.getX())<0.0000001)&&(Math.abs(GradVector.getY())<0.0000001))
-			dppq = 0;
-		if((Math.abs(GradVectorq.getX())<0.0000001)&&(Math.abs(GradVectorq.getY())<0.0000001))
-			dqpq = 0;
-			
-		
-		double fd = 2.0/(3*Math.PI)*(Math.acos(dppq)+Math.acos(dqpq));	    
-
-		//return Math.abs(imagePixels[toIndex(dx,dy)]-imagePixels[toIndex(sx,sy)]);
-		return ew*fe+gw*fg+dw*fd;//+0.2*Math.sqrt( (dx-sx)*(dx-sx) + (dy-sy)*(dy-sy));
-		*/
-    }
+		double edgeCostSum = gw*gradientr[dr][dc]+zw*laplacian[dr][dc];
+		double testi = edgeDirectionCost(sr,sc,dr,dc)*dw;
+		edgeCostSum+=edgeDirectionCost(sr,sc,dr,dc)*dw;
+		return edgeCostSum;
+	}
 
     //updates Costs and Paths for a given point
     //actuates over 8 directions N, NE, E, SE, S, SW, W, NW
