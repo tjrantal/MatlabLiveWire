@@ -28,12 +28,12 @@ public class LiveWireCosts implements Runnable{
     double[][] imagePixels; //stores Pixels from original image
     int[][] imageCosts; //stores Costs for every pixel
     PriorityQueue<PixelNode> pixelCosts;
-    double[][] gradientx; //stores image gradient modulus 
-    double[][] gradienty; //stores image gradient modulus 
+    double[][] gradientrows; //stores image gradient modulus 
+    double[][] gradientcolumns; //stores image gradient modulus 
     //it is oriented: X = LEFT TO RIGHT
     //                Y = UP   TO DOWN
-    double[][] gradientr; //stores image gradient RESULTANT modulus 
-	double[][] laplacian;
+    public double[][] gradientr; //stores image gradient RESULTANT modulus 
+	public double[][] laplacian;
 
     int[][] whereFrom;  //stores where from path started
     boolean[][] visited; //stores whether the node was marked or not
@@ -53,8 +53,8 @@ public class LiveWireCosts implements Runnable{
       
     //initializes gradient vector
     private void initGradient(){
-		gradientx = new double[rows][columns];
-		gradienty = new double[rows][columns];
+		gradientrows = new double[rows][columns];
+		gradientcolumns = new double[rows][columns];
 		gradientr = new double[rows][columns];
 		//Using sobel
 		//for gx convolutes the following matrix
@@ -64,48 +64,40 @@ public class LiveWireCosts implements Runnable{
 		//     |-1 0 1|
 
 
-		for(int i=0;i<width;i++){
-			for(int j=0;j<height;j++){
-			if((i>0)&&(i<width-1)&&(j>0)&&(j<height-1)){
-				gradientx[toIndex(i,j)] =
-				-1*(imagePixels[toIndex(i-1,j-1)]) +1*(imagePixels[toIndex(i+1,j-1)])
-				-2*(imagePixels[toIndex(i-1,j  )]) +2*(imagePixels[toIndex(i+1,j  )])
-				-1*(imagePixels[toIndex(i-1,j+1)]) +1*(imagePixels[toIndex(i+1,j+1)]);
-			}
+		for(int i=1;i<rows-1;++i){
+			for(int j=1;j<columns-1;++j){
+				gradientrows[i][j] =
+				-1*(imagePixels[i-1][j-1)]) +1*(imagePixels[i+1][j-1])
+				-2*(imagePixels[i-1][j]) +2*(imagePixels[i+1][j])
+				-1*(imagePixels[i-1][j+1]) +1*(imagePixels[i+1][j+1]);
 			}
 		}
 
-		//for gy convolutes the following matrix (remember y is zero at the top!)
+		//for gy convolutes the following matrix
 		//
-		//     |+1 +2 +1| 
+		//     |-1 -2 -1| 
 		//Gy = | 0  0  0|
-		//     |-1 -2 -1|
+		//     |+1 +2 +1|
 		//
-		for(int i=0;i<width;i++){
-			for(int j=0;j<height;j++){
-			if((i>0)&&(i<width-1)&&(j>0)&&(j<height-1)){
-				gradienty[toIndex(i,j)] = 
-				+1*(imagePixels[toIndex(i-1,j-1)]) -1*(imagePixels[toIndex(i-1,j+1)])
-				+2*(imagePixels[toIndex(i  ,j-1)]) -2*(imagePixels[toIndex(i  ,j+1)])
-				+1*(imagePixels[toIndex(i+1,j-1)]) -1*(imagePixels[toIndex(i+1,j+1)]);
-			}
+		for(int i=1;i<rows-1;++i){
+			for(int j=1;j<columns-1;++j){
+				gradientcolumns[i][j] = 
+				-1*(imagePixels[i-1][j-1]) +1*(imagePixels[i-1][j+1])
+				-2*(imagePixels[i][j-1]) +2*(imagePixels[i][j+1])
+				-1*(imagePixels[i+1],[j-1]) +1*(imagePixels[i+1][j+1]);
 			}
 		}
-		for(int i=0;i<width;i++){
-			for(int j=0;j<height;j++){
-			if((i>0)&&(i<width-1)&&(j>0)&&(j<height-1)){
-				//Math.hypot returns sqrt(x^2 +y^2) without intermediate overflow or underflow.
-				
-				gradientr[toIndex(i,j)] = Math.sqrt( gradientx[toIndex(i,j)]*gradientx[toIndex(i,j)]+
-								 gradienty[toIndex(i,j)]*gradienty[toIndex(i,j)]);
-				
-			}
+		for(int i=1;i<rows-1;i++){
+			for(int j=1;j<columns-1;j++){
+				gradientr[i][j] = Math.sqrt(gradientrows[i][j]*gradientrows[i][j]+gradientcolumns[i][j]*gradientcolumns[i][j]);				
 			}
 		}
 
 		double grMax = arrMax(gradientr);
-		for(int i=0;i< gradientr.length;++i){
-			gradientr[i] = 1-gradientr[i]/grMax;
+		for (int i  = 0; i< matrix.length;++i){
+			for (int j  = 0; j< matrix[i].length;++j){
+				gradientr[i][j] = 1.0-gradientr[i][j]/grMax;
+			}
 		}
     }
 	
@@ -116,30 +108,19 @@ public class LiveWireCosts implements Runnable{
 		}
 		return maximum;
 	}
-
-    public double[][] getGradientR(){
-		double[][] gradientR = new double[width][height];
-		for(int i=0;i<height;i++){
-			for(int j=0;j<width;j++){
-				gradientR[j][i] = gradientr[i*width+j];
+	public static double arrMax(double[][] matrix){
+		double maximum = Double.NEGATIVE_INFINITY;
+		for (int i  = 0; i< matrix.length;++i){
+			for (int j  = 0; j< matrix[i].length;++j){
+				if (matrix[i][j] > maximum) maximum =  matrix[i][j];
 			}
 		}
-		return gradientR;
-    }
-	
-	public double[][] getLaplacian(){
-		double[][] laplacianR = new double[width][height];
-		for(int i=0;i<height;i++){
-			for(int j=0;j<width;j++){
-				laplacianR[j][i] = laplacian[i*width+j];
-			}
-		}
-		return laplacianR;
-    }
+		return maximum;
+	}
 
-	    //initializes gradient vector
+    //initializes gradient vector
     private void initLaplacian(){
-		laplacian = new double[height*width];
+		laplacian = new double[rows][columns];
 		
 		//Using finite differences
 		//convolute with
@@ -151,24 +132,24 @@ public class LiveWireCosts implements Runnable{
 									{1,-4,1},
 									{0,1,0}};
 
-		for(int i=1;i<width-1;i++){
-			for(int j=1;j<height-1;j++){
+		for(int i=1;i<rows-1;i++){
+			for(int j=1;j<columns-1;j++){
 				for (int j2=-1;j2<=1;++j2){
 					for (int i2=-1;i2<=1;++i2){
-						laplacian[toIndex(i,j)] += imagePixels[toIndex(i+i2,j+j2)]*laplacianKernel[i2+1][j2+1];
+						laplacian[i][j] += imagePixels[[i+i2][j+j2]*laplacianKernel[i2+1][j2+1];
 					}
 				}
 			}
 		}
 
 		/*Search for zero crossing to binarize the result*/
-		double[] tempLap = new double[laplacian.length];
+		double[][] tempLap = new double[rows][columns];
 		int[][] neighbourhood = new int[8][2];	//8 connected neighbourhood
-		for(int i=1;i<width-1;i++){
-			for(int j=1;j<height-1;j++){
-				tempLap[toIndex(i,j)] = 1;	
-				if (laplacian[toIndex(i,j)] == 0){	/*No need to check neighbours*/
-					tempLap[toIndex(i,j)] = 0;	
+		for(int i=1;i<rows-1;i++){
+			for(int j=1;j<columns-1;j++){
+				tempLap[i][j] = 1;	
+				if (laplacian[i][j] == 0){	/*No need to check neighbours*/
+					tempLap[i][j] = 0;	
 				}else{	/*Check neighbours*/
 					//Check 8-connected neighbour
 					for (int th = 0; th<8;++th){
@@ -185,22 +166,21 @@ public class LiveWireCosts implements Runnable{
 		/*OverWrite Laplacian*/
 		for(int i=0;i<width;i++){
 			for(int j=0;j<height;j++){
-				laplacian[toIndex(i,j)]  = tempLap[toIndex(i,j)];	
+				laplacian[i][j]  = tempLap[i][j];	
 			}
 		}
     }
 	
 		/*Update pixel queue*/
-	protected double[] checkNeighbours(double[] tempLap, int[][] neighbourhood,int[] centre){
+	protected double[][] checkNeighbours(double[][] tempLap, int[][] neighbourhood,int[] centre){
 		int[] coordinates;
-		double[] lbpHist;
         for (int r = 0;r<neighbourhood.length;++r){
 			coordinates = neighbourhood[r];
-            if (Math.signum(laplacian[toIndex(coordinates[0],coordinates[1])]) != Math.signum(laplacian[toIndex(centre[0],centre[1])])){ /*Signs differ, mark border*/
-				if (Math.abs(laplacian[toIndex(centre[0],centre[1])]) < Math.abs(laplacian[toIndex(coordinates[0],coordinates[1])])){
-					tempLap[toIndex(centre[0],centre[1])] = 0;
+            if (Math.signum(laplacian[coordinates[0]][coordinates[1]]) != Math.signum(laplacian[centre[0]][centre[1]])){ /*Signs differ, mark border*/
+				if (Math.abs(laplacian[centre[0]][centre[1]]) < Math.abs(laplacian[coordinates[0]][coordinates[1]])){
+					tempLap[[centre[0]][centre[1]] = 0;
 			    }else{
-					tempLap[toIndex(coordinates[0],coordinates[1])] = 0;
+					tempLap[coordinates[0]][coordinates[1]] = 0;
 				}
             }
         }
@@ -218,20 +198,18 @@ public class LiveWireCosts implements Runnable{
     	dw = 0.13;
     	
 		//initializes all other matrices
+		rows  = imagePixels.length;
+		columns = imagePixels[0].length;
 		this.imagePixels = imagePixels;
 		pixelCosts = new PriorityQueue<PixelNode>();
-		whereFrom   = new int [x*y];
-		visited     = new boolean[x*y];
-		width  = x;
-		height = y;
+		whereFrom   = new int[rows][columns];
+		visited     = new boolean[rows][columns];
+		
 				
 		//copy image matrice
-		for(int j=0;j<y;j++){
-			for(int i=0;i<x;i++){	    	
-			imagePixels[j*x+i] = 
-				image[j*x+i];		
-			//imageCosts [j*x+i] = INF;
-			visited    [j*x+i] = false;
+		for(int i=0;i<rows;i++){
+			for(int j=0;j<columns;j++){	    	
+				visited[i][j] = false;
 			}
 		}
 		initGradient();
@@ -242,12 +220,12 @@ public class LiveWireCosts implements Runnable{
     }    
 	
     //returns thee cost of going from sx,sy to dx,dy
-    private double edgeCost(int sx,int sy,int dx,int dy){
+    private double edgeCost(int sr,int sc,int dr,int dc){
 		//fg is the Gradient Magnitude
 		
 		
 		/*Debugging, test liveWire without gradient direction...*/
-		return gw*gradientr[toIndex(dx,dy)]+zw*laplacian[toIndex(dx,dy)];
+		return gw*gradientr[dr][dc]+zw*laplacian[dr][dc];
 		
 		/*Disabled...*/
 		/*
@@ -274,7 +252,7 @@ public class LiveWireCosts implements Runnable{
 
 		//Dp is the unit vector of the gradient direction at pixel p (sx,sy)
 		//this is defined near formule 37 in United Snakes
-		Vector2d GradVector = new Vector2d(gradientx[toIndex(sx,sy)],gradienty[toIndex(sx,sy)]);
+		Vector2d GradVector = new Vector2d(gradientrows[toIndex(sx,sy)],gradientcolumns[toIndex(sx,sy)]);
 		Vector2d Dp = GradVector.getUnit();
 		//DpN is the normal vector to Dp
 		Vector2d DpN = new Vector2d(Dp.getNormal());
@@ -297,7 +275,7 @@ public class LiveWireCosts implements Runnable{
 		//dppq = DpN . Lpq 
 		double dppq = DpN.dotProduct(Lpq);
 		//dqpq = Lpq . DpN
-		Vector2d GradVectorq = new Vector2d(gradientx[toIndex(dx,dy)],gradienty[toIndex(dx,dy)]);
+		Vector2d GradVectorq = new Vector2d(gradientrows[toIndex(dx,dy)],gradientcolumns[toIndex(dx,dy)]);
 		Vector2d Dq = GradVectorq.getUnit();
 		Vector2d DqN = new Vector2d(Dq.getNormal());
 		double dqpq = Lpq.dotProduct(DqN);
@@ -324,70 +302,36 @@ public class LiveWireCosts implements Runnable{
 
     //updates Costs and Paths for a given point
     //actuates over 8 directions N, NE, E, SE, S, SW, W, NW
-    private void updateCosts(int x,int y,double mycost){
-		visited[toIndex(x,y)] = true;
+    private void updateCosts(int r,int c,double mycost){
+		visited[r][c] = true;
 		pixelCosts.poll();
+		int[][] neighbourhood = new int[8][2];	//8 connected neighbourhood
+		//Check 8-connected neighbour
+		for (int th = 0; th<8;++th){
+			neighbourhood[th][0] = r+(int) Math.round(Math.sin((double) th));
+			neighbourhood[th][1] = c+(int) Math.round(Math.cos((double) th));
+		}
+		int[] coordinates;
+        for (int i = 0;i<neighbourhood.length;++i){
+			coordinates = neighbourhood[i];
+            if (coordinates[0] >= 0 && coordinates[0] <rows &&
+				coordinates[1] >= 0 && coordinates[0] <columns){
+				int[] fromCoords = {r,c};
+				int[] pixelCoords = {neigbourhood[i][0],neigbourhood[i][1]};
+				pixelCosts.add(new PixelNode(pixelCoords, mycost+edgeCost(r,c,neigbourhood[i][0],neigbourhood[i][1]),fromCoords));	    
+            }
+        }
 
-		//upper right
-		if((x< width-1)&&(y>0)){
-			pixelCosts.add(new PixelNode(toIndex(x+1,y-1), mycost+edgeCost(x,y,x+1,y-1),toIndex(x,y)));	    
-		}
-		//upper left
-		if((x>0)&&(y>0)){
-			pixelCosts.add(new PixelNode(toIndex(x-1,y-1), mycost+edgeCost(x,y,x-1,y-1),toIndex(x,y)));	    
-		}
-		//down right
-		if((x< width-1)&&(y<height-1)){
-			pixelCosts.add(new PixelNode(toIndex(x+1,y+1), mycost+edgeCost(x,y,x+1,y+1),toIndex(x,y)));	    
-		}
-		//down left
-		if((x>0)&&(y<height-1)){
-			pixelCosts.add(new PixelNode(toIndex(x-1,y+1), mycost+edgeCost(x,y,x-1,y+1),toIndex(x,y)));	    
-		}
-
-		//update left cost
-		if(x>0){
-			pixelCosts.add(new PixelNode(toIndex(x-1,y), mycost+edgeCost(x,y,x-1,y),toIndex(x,y)));	    
-		}
-		//update right cost
-		if(x<width-1){
-			pixelCosts.add(new PixelNode(toIndex(x+1,y), mycost+edgeCost(x,y,x+1,y),toIndex(x,y)));
-		}
-		//update up cost
-		if(y>0){
-			pixelCosts.add(new PixelNode(toIndex(x,y-1), mycost+edgeCost(x,y,x,y-1),toIndex(x,y)));
-		}
-		//update down cost
-		if(y<height-1){
-			pixelCosts.add(new PixelNode(toIndex(x,y+1), mycost+edgeCost(x,y,x,y+1),toIndex(x,y)));
-		}
+			
     }
 
-    // returns index pointing to next node to be visited
-    // It is defined as the minimum cost not yet visited
-    // returns -1 if no node is available
-    private int findNext(){
-	int min = INF;
-	int ans = -1;
-	for(int y=0;y<height;y++){
-	    for(int x=0;x<width;x++){
-		if( ( visited   [toIndex(x,y)] == false) &&
-		    ( imageCosts[toIndex(x,y)] <  min) ){
-		    min = imageCosts[toIndex(x,y)];
-		    ans = toIndex(x,y);
-		}
-	    }
-	}
-	return ans;
-    }
-
-    public int[][] returnPath(int x, int y){
+    public int[][] returnPath(int r, int c){
 	//returns the path given mouse position
 
     	int[] tempx = new int[width*height];
 		int[] tempy = new int[width*height];
     	
-    	if(visited[toIndex(x,y)]==false){
+    	if(visited[r][c]==false){
     		//attempt to get path before creating it 
     		//this might occur because of the thread
     		return null;
@@ -527,10 +471,10 @@ public class LiveWireCosts implements Runnable{
 //
 
 class PixelNode implements Comparable<PixelNode> {
-    private int myIndex;
+    private int[] myIndex;
     private double myDistance;
-    private int whereFrom;
-    public PixelNode(int index, double distance, int whereFrom){
+    private int[] whereFrom;
+    public PixelNode(int[] index, double distance, int[] whereFrom){
 	myIndex = index;
 	myDistance = distance;
 	this.whereFrom = whereFrom;
@@ -538,10 +482,10 @@ class PixelNode implements Comparable<PixelNode> {
     public double getDistance(){
 	return myDistance;
     }
-    public int getIndex(){
+    public int[] getIndex(){
 	return myIndex;
     }
-    public int getWhereFrom(){
+    public int[] getWhereFrom(){
 	return whereFrom;
     }
 
