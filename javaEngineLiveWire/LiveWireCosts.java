@@ -219,6 +219,22 @@ public class LiveWireCosts implements Runnable{
 
     }    
 	
+	
+	/*Barret 1997 eq 3 & 4*/
+	private double edgeDirectionCost(int sr,int sc,int dr,int dc){
+		Vector2d Dp = new Vector2d(gradientrows[sr][sc],-gradientcolumns[sr][sc]);
+		Vector2d Dq = new Vector2d(gradientrows[dr][dc],-gradientcolumns[dr][dc]);
+		Vector2d p = new Vector2d(sr,sc);
+		Vector2d q = new Vector2d(dr,dc);
+		Vector2d L;
+		if (Dp.dotProduct(q.sub(p)) >= 0){
+			L = q.sub(p);
+		}else{
+			L = p.sub(q);
+		}
+		return 2.0/(3.0*Math.PI)*(Math.acos(Dp.dotProduct(L))+Math.acos(L.dotProduct(Dq)));
+	
+	}
     //returns thee cost of going from sx,sy to dx,dy
     private double edgeCost(int sr,int sc,int dr,int dc){
 		//fg is the Gradient Magnitude

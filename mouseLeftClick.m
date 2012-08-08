@@ -27,7 +27,7 @@ function mouseLeftClick(objH,evt)
         drawnow;
         disp('Seed set');
         disp('Seed running');
-        liveWireEngine.setSeed(seedPoint(2)-1,seedPoint(1)-1);    %N.B. row, column and index differs by 1!!!
+        liveWireEngine.setSeed(seedPoint(2)-1,seedPoint(1)-1);    %N.B. row, column and index differs by 1 BTW matlab and JAVA!!!
         disp('Seed set ready');
     end
 end
