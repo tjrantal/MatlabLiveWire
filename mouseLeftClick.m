@@ -13,7 +13,7 @@ function mouseLeftClick(objH,evt)
         seedPoint = [round(point(1,1)), round(point(1,2))]; 
 %         keyboard;
         %disp(['Seed ' num2str(seedPoint(:)')]);
-        lineHandle = plot(seedPoint(1),seedPoint(2),'r*-');
+        lineHandle = plot(seedPoint(1),seedPoint(2),'r-');
         drawnow;
         disp('Seed set');
         disp('Seed running');
