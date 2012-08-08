@@ -35,13 +35,13 @@ public class LiveWireCosts implements Runnable{
     public double[][] gradientr; //stores image gradient RESULTANT modulus 
 	public double[][] laplacian;
 
-    int[][] whereFrom;  //stores where from path started
+    int[][][] whereFrom;  //stores where from path started
     boolean[][] visited; //stores whether the node was marked or not
     int rows;
     int columns;
-    int sx,sy; //seed x and seed y, weight zero for this point
+    int sr,sc; //seed x and seed y, weight zero for this point
 
-    private int tx,ty;//thread x and y passed as parameters
+    private int tr,tc;//thread x and y passed as parameters
 
     Thread myThread;
     boolean myThreadRuns;//flag for thread state
@@ -67,7 +67,7 @@ public class LiveWireCosts implements Runnable{
 		for(int i=1;i<rows-1;++i){
 			for(int j=1;j<columns-1;++j){
 				gradientrows[i][j] =
-				-1*(imagePixels[i-1][j-1)]) +1*(imagePixels[i+1][j-1])
+				-1*(imagePixels[i-1][j-1]) +1*(imagePixels[i+1][j-1])
 				-2*(imagePixels[i-1][j]) +2*(imagePixels[i+1][j])
 				-1*(imagePixels[i-1][j+1]) +1*(imagePixels[i+1][j+1]);
 			}
@@ -84,7 +84,7 @@ public class LiveWireCosts implements Runnable{
 				gradientcolumns[i][j] = 
 				-1*(imagePixels[i-1][j-1]) +1*(imagePixels[i-1][j+1])
 				-2*(imagePixels[i][j-1]) +2*(imagePixels[i][j+1])
-				-1*(imagePixels[i+1],[j-1]) +1*(imagePixels[i+1][j+1]);
+				-1*(imagePixels[i+1][j-1]) +1*(imagePixels[i+1][j+1]);
 			}
 		}
 		for(int i=1;i<rows-1;i++){
@@ -94,8 +94,8 @@ public class LiveWireCosts implements Runnable{
 		}
 
 		double grMax = arrMax(gradientr);
-		for (int i  = 0; i< matrix.length;++i){
-			for (int j  = 0; j< matrix[i].length;++j){
+		for (int i  = 0; i< gradientr.length;++i){
+			for (int j  = 0; j< gradientr[i].length;++j){
 				gradientr[i][j] = 1.0-gradientr[i][j]/grMax;
 			}
 		}
@@ -136,7 +136,7 @@ public class LiveWireCosts implements Runnable{
 			for(int j=1;j<columns-1;j++){
 				for (int j2=-1;j2<=1;++j2){
 					for (int i2=-1;i2<=1;++i2){
-						laplacian[i][j] += imagePixels[[i+i2][j+j2]*laplacianKernel[i2+1][j2+1];
+						laplacian[i][j] += imagePixels[i+i2][j+j2]*laplacianKernel[i2+1][j2+1];
 					}
 				}
 			}
@@ -164,8 +164,8 @@ public class LiveWireCosts implements Runnable{
 		}
 		
 		/*OverWrite Laplacian*/
-		for(int i=0;i<width;i++){
-			for(int j=0;j<height;j++){
+		for(int i=0;i<rows;i++){
+			for(int j=0;j<columns;j++){
 				laplacian[i][j]  = tempLap[i][j];	
 			}
 		}
@@ -178,7 +178,7 @@ public class LiveWireCosts implements Runnable{
 			coordinates = neighbourhood[r];
             if (Math.signum(laplacian[coordinates[0]][coordinates[1]]) != Math.signum(laplacian[centre[0]][centre[1]])){ /*Signs differ, mark border*/
 				if (Math.abs(laplacian[centre[0]][centre[1]]) < Math.abs(laplacian[coordinates[0]][coordinates[1]])){
-					tempLap[[centre[0]][centre[1]] = 0;
+					tempLap[centre[0]][centre[1]] = 0;
 			    }else{
 					tempLap[coordinates[0]][coordinates[1]] = 0;
 				}
@@ -202,7 +202,7 @@ public class LiveWireCosts implements Runnable{
 		columns = imagePixels[0].length;
 		this.imagePixels = imagePixels;
 		pixelCosts = new PriorityQueue<PixelNode>();
-		whereFrom   = new int[rows][columns];
+		whereFrom   = new int[rows][columns][2];
 		visited     = new boolean[rows][columns];
 		
 				
@@ -317,8 +317,8 @@ public class LiveWireCosts implements Runnable{
             if (coordinates[0] >= 0 && coordinates[0] <rows &&
 				coordinates[1] >= 0 && coordinates[0] <columns){
 				int[] fromCoords = {r,c};
-				int[] pixelCoords = {neigbourhood[i][0],neigbourhood[i][1]};
-				pixelCosts.add(new PixelNode(pixelCoords, mycost+edgeCost(r,c,neigbourhood[i][0],neigbourhood[i][1]),fromCoords));	    
+				int[] pixelCoords = {neighbourhood[i][0],neighbourhood[i][1]};
+				pixelCosts.add(new PixelNode(pixelCoords, mycost+edgeCost(r,c,neighbourhood[i][0],neighbourhood[i][1]),fromCoords));	    
             }
         }
 
@@ -328,67 +328,44 @@ public class LiveWireCosts implements Runnable{
     public int[][] returnPath(int r, int c){
 	//returns the path given mouse position
 
-    	int[] tempx = new int[width*height];
-		int[] tempy = new int[width*height];
-    	
+    	int[][] pathCoordinates = new int[rows*columns][2];
+		    	
     	if(visited[r][c]==false){
     		//attempt to get path before creating it 
     		//this might occur because of the thread
     		return null;
     	}
     	int length =0;
-    	int myx = x;
-    	int myy = y;
-    	int nextx;
-    	int nexty;
+    	int myr = r;
+    	int myc = c;
+    	int nextr;
+    	int nextc;
+		pathCoordinates[length][0] = r;
+		pathCoordinates[length][0] = c;
     	do{ //while we haven't found the seed	
-    		length++;
-    		nextx = whereFrom[toIndex(myx,myy)]%width;
-    		nexty = whereFrom[toIndex(myx,myy)]/width;
-    		myx = nextx;
-    		myy = nexty;
+    		++length;
+    		nextr = whereFrom[myr][c][0];
+    		nextc = whereFrom[myc][c][1];
+    		myr = nextr;
+    		myc = nextc;
+			pathCoordinates[length][0] = nextr;
+			pathCoordinates[length][1] = nextc;
     		
-    	}while (!((myx==sx)&&(myy==sy)));
+    	}while (!((myr==sr)&&(myc==sc)));
     	
-    	
-    	
-    	//add points to vector
-    	myx=x;
-    	myy=y;
-    	int count=0;
-    	tempx[0]=myx;//add last points
-    	tempy[0]=myy; 
-	//	System.out.println("Caminho ");
-    	do{ //while we haven't found the seed	    	
-    		nextx = whereFrom[toIndex(myx,myy)]%width;
-    		nexty = whereFrom[toIndex(myx,myy)]/width;
-		//System.out.println("("+nextx+","+nexty+")");
-    		
-    		count++;
-    		tempx[count]=nextx;
-    		tempy[count]=nexty; 
-    		
-    		myx = nextx;
-    		myy = nexty;
-    		
-    	}while (!((myx==sx)&&(myy==sy)));
     	//path is from last point to first
     	//we need to invert it
-	//	System.out.println("Caminho ");
-		int[][] pathToReturn = new int[count+1][2];
-    	for(int i=0;i<=count;i++){
+		int[][] pathToReturn = new int[length+1][2];
+    	for(int i=0;i<=length;i++){
 
-    		pathToReturn[i][0]= tempx[count-i];
-    		pathToReturn[i][1]=tempy[count-i];    	
-		//System.out.println("( "+vx[i] + " , " + vy[i] + " )");
+    		pathToReturn[i][0]= pathCoordinates[length-i][0];
+    		pathToReturn[i][1]=pathCoordinates[length-i][1];    	
     	}		    	
-    	
     	return pathToReturn;    		    	
-    	
     }
 
     //set point to start Dijkstra
-    public void setSeed(int x, int y){
+    public void setSeed(int r, int c){
 	    	
     	myThreadRuns=false;    	    	
     	try {
@@ -398,8 +375,8 @@ public class LiveWireCosts implements Runnable{
 			e.printStackTrace();			
 		}
     	
-    	tx = x;	
-    	ty = y;	
+    	tr = r;	
+    	tc = c;	
     	myThreadRuns = true;
     	myThread = new Thread(this);
 		myThread.start();		
@@ -407,57 +384,48 @@ public class LiveWireCosts implements Runnable{
     }    
     public void run(){
 		//runs set point in parallel
-		int x = tx;
-		int y = ty;
+		int r = tr;
+		int c = tc;
 
-		int nextIndex;
-		int nextX;
-		int nextY;
-		sx = x;
-		sy = y;
+		int[] nextIndex;
+		int nextR;
+		int nextC;
+		sr = r;
+		sr = c;
 		
-		for(int i=0;i<height*width;++i){
-			visited[i]  = false;
+		for(int i=0;i<rows;i++){
+			for(int j=0;j<columns;j++){	    	
+				visited[i][j] = false;
+			}
 		}
 		
-		
-		visited   [toIndex(x,y)] = true; //mark as visited
-		whereFrom [toIndex(x,y)] = toIndex(x,y);
+		visited[r][c] = true; //mark as visited
+		int[] coordinates = {r,c};
+		whereFrom[r][c] = coordinates;
 
 		
 
 		//update costs
-		updateCosts(x,y,0);
-		//	nextIndex = findNext();
-		//	nextX = nextIndex%width;
-		//	nextY = nextIndex/width;
-		int debugcount = 0;
-
+		updateCosts(r,c,0);
 		
 		while((pixelCosts.peek()!=null)&&(myThreadRuns)){
-			//	    System.out.println("Debug count " + debugcount++);
-			
-			
-			
 			nextIndex = ((PixelNode)pixelCosts.peek()).getIndex();
-			nextX = nextIndex%width;
-			nextY = nextIndex/width;
+			whereFrom[nextIndex[0]][nextIndex[1]] = ((PixelNode)pixelCosts.peek()).getWhereFrom();
 			
-			whereFrom[nextIndex] =((PixelNode)pixelCosts.peek()).getWhereFrom();
-			
-			updateCosts(nextX, nextY, ((PixelNode) pixelCosts.peek()).getDistance());
+			updateCosts(nextIndex[0], nextIndex[1], ((PixelNode) pixelCosts.peek()).getDistance());
 
 			//removes pixels that are already visited and went to the queue
 			while(true){
-			if( pixelCosts.peek() == null )
-				break;
-			if(visited[ ((PixelNode)pixelCosts.peek()).getIndex() ]==false)
-				break;
-			pixelCosts.poll();
+				if( pixelCosts.peek() == null )
+					break;
+				coordinates = ((PixelNode)pixelCosts.peek()).getIndex();
+				if(visited[coordinates[0]][coordinates[1]]==false)
+					break;
+				pixelCosts.poll();
 			}
 		}
-		while(pixelCosts.peek()!=null)
-			pixelCosts.poll();
+		/*Empty the pixelCosts queue*/
+		pixelCosts.clear();
     }
 
 }
