@@ -1,10 +1,10 @@
-function testJava
+% function digitizedPath = testJava
     
     close all;
     clear all;
     clc;
     javaaddpath('.');
-    global lineHandle returnedPath liveWireEngine imagePixels;
+    global lineHandle returnedPath liveWireEngine imagePixels digitizedPath;
     %dicomFileIn = 'IM000~10';
 %     dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\karsittu\kh1\18834435';
     dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\livewireData\10022712\18830471';
@@ -31,4 +31,4 @@ function testJava
     set(gcf,'WindowButtonUpFcn',@mouseLeftClick);  %%LiveWire init and setting points are handled with callbacks
     disp('Callback set');
 
-end
+% end
