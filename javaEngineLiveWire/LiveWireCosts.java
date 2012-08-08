@@ -12,6 +12,8 @@
 			object = LiveWireCosts(pixelMatrix,width,height);
 		set seed point:
 			object.setSeed(x,y);
+			
+	N.B. Matlab gives data in as rows,columns
 */
 
 package javaEngineLiveWire;
@@ -23,22 +25,20 @@ public class LiveWireCosts implements Runnable{
 	
 	
 	
-    double[] imagePixels; //stores Pixels from original image
-    int[] imageCosts; //stores Costs for every pixel
+    double[][] imagePixels; //stores Pixels from original image
+    int[][] imageCosts; //stores Costs for every pixel
     PriorityQueue<PixelNode> pixelCosts;
-    double[] gradientx; //stores image gradient modulus 
-    double[] gradienty; //stores image gradient modulus 
+    double[][] gradientx; //stores image gradient modulus 
+    double[][] gradienty; //stores image gradient modulus 
     //it is oriented: X = LEFT TO RIGHT
     //                Y = UP   TO DOWN
-    double[] gradientr; //stores image gradient RESULTANT modulus 
-	double[] laplacian;
-    double grmin;//gradient global minimum
-    double grmax;//gradient global maximum
+    double[][] gradientr; //stores image gradient RESULTANT modulus 
+	double[][] laplacian;
 
-    int[] whereFrom;  //stores where from path started
-    boolean[] visited; //stores whether the node was marked or not
-    int width;
-    int height;
+    int[][] whereFrom;  //stores where from path started
+    boolean[][] visited; //stores whether the node was marked or not
+    int rows;
+    int columns;
     int sx,sy; //seed x and seed y, weight zero for this point
 
     private int tx,ty;//thread x and y passed as parameters
@@ -46,24 +46,16 @@ public class LiveWireCosts implements Runnable{
     Thread myThread;
     boolean myThreadRuns;//flag for thread state
     
-    private double gw;//Gradient Magnitude Weight - set by setGWeight
-    private double dw;//Gradient Direction Weight - set by setDWeight
-	private double zw;//Exponential        Weight - set by setEWeight
-    private double ew;//Exponential        Weight - set by setEWeight
-    private double pw;//Exponential Potence Weight - set by setPWeight
-    
-    static int INF = 0x7FFFFFFF; //maximum integer
+    private double gw;//Gradient Magnitude Weight
+    private double dw;//Gradient Direction Weight
+	private double zw;//Binary Laplacian Weight
 
-    //converts x, y coordinates to vector index
-    private int toIndex(int x,int y){
-		return (y*width+x);
-    }
-
+      
     //initializes gradient vector
     private void initGradient(){
-		gradientx = new double[height*width];
-		gradienty = new double[height*width];
-		gradientr = new double[height*width];
+		gradientx = new double[rows][columns];
+		gradienty = new double[rows][columns];
+		gradientr = new double[rows][columns];
 		//Using sobel
 		//for gx convolutes the following matrix
 		//   
@@ -217,7 +209,7 @@ public class LiveWireCosts implements Runnable{
 
 	
     //initializes Dijkstra with the image
-    public LiveWireCosts(double[] image,int x, int y){
+    public LiveWireCosts(double[][] imagePixels){
  
 		//initializes weights for edge cost taken from Barret 1997
     	//these are default values
@@ -226,7 +218,7 @@ public class LiveWireCosts implements Runnable{
     	dw = 0.13;
     	
 		//initializes all other matrices
-		imagePixels = new double[x*y];
+		this.imagePixels = imagePixels;
 		pixelCosts = new PriorityQueue<PixelNode>();
 		whereFrom   = new int [x*y];
 		visited     = new boolean[x*y];
