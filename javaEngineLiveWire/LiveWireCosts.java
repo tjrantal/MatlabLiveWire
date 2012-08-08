@@ -222,7 +222,11 @@ public class LiveWireCosts implements Runnable{
     //returns thee cost of going from sx,sy to dx,dy
     private double edgeCost(int sr,int sc,int dr,int dc){
 		//fg is the Gradient Magnitude
-		
+		System.out.println("dr "+dr+" dc "+dc
+							+" gradR "+gradientr.length
+							+" gradC "+gradientr[0].length
+							+" lapR "+laplacian.length
+							+" lapC "+laplacian[0].length);
 		
 		/*Debugging, test liveWire without gradient direction...*/
 		return gw*gradientr[dr][dc]+zw*laplacian[dr][dc];
@@ -315,7 +319,7 @@ public class LiveWireCosts implements Runnable{
         for (int i = 0;i<neighbourhood.length;++i){
 			coordinates = neighbourhood[i];
             if (coordinates[0] >= 0 && coordinates[0] <rows &&
-				coordinates[1] >= 0 && coordinates[0] <columns){
+				coordinates[1] >= 0 && coordinates[1] <columns){
 				int[] fromCoords = {r,c};
 				int[] pixelCoords = {neighbourhood[i][0],neighbourhood[i][1]};
 				pixelCosts.add(new PixelNode(pixelCoords, mycost+edgeCost(r,c,neighbourhood[i][0],neighbourhood[i][1]),fromCoords));	    

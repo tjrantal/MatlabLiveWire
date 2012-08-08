@@ -13,16 +13,16 @@ function testJava
     %Filter with Gaussian
     gaus = fspecial('gaussian',3);
     imagePixels = imfilter(imagePixels,gaus,'replicate');
-    liveWireEngine = javaEngineLiveWire.LiveWireCosts(reshape(imagePixels,1,size(imagePixels,1)*size(imagePixels,2)),size(imagePixels,1),size(imagePixels,2));
-    gradientR = liveWireEngine.getGradientR();
-    figure;
-    subplot(1,3,1);
-    imshow(imagePixels,[]);
-    subplot(1,3,2);
-    imshow(gradientR,[]);
-    laplacianR = liveWireEngine.getLaplacian();
-    subplot(1,3,3);
-    imshow(laplacianR,[]);
+    liveWireEngine = javaEngineLiveWire.LiveWireCosts(imagePixels);
+%     gradientr = liveWireEngine.gradientr;
+%     figure;
+%     subplot(1,3,1);
+%     imshow(imagePixels,[]);
+%     subplot(1,3,2);
+%     imshow(gradientr,[]);
+%     laplacian = liveWireEngine.laplacian();
+%     subplot(1,3,3);
+%     imshow(laplacian,[]);
 %     keyboard
     figure
     imshow(mat2gray(imagePixels));

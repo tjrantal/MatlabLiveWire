@@ -6,13 +6,13 @@ function mouseMoved(objH,evt)
         disp('Out of image');
     else
         disp(['Set target']);
-        returnedPath = liveWireEngine.returnPath(targetPoint(1),targetPoint(2));
+        returnedPath = liveWireEngine.returnPath(targetPoint(2),targetPoint(1)); %N.B. row, column!!!
         if isempty(returnedPath)
            return; 
         end
         disp(['Target set']);
         %Display image
-        set(lineHandle,'XData',returnedPath(:,1),'YData',returnedPath(:,2));
+        set(lineHandle,'XData',returnedPath(:,2),'YData',returnedPath(:,1)); %N.B. row, column!!!
         drawnow;
     end
 end
