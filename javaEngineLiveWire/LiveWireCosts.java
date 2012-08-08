@@ -220,7 +220,7 @@ public class LiveWireCosts implements Runnable{
     }    
 	
 	
-	/*Barret 1997 eq 3 & 4*/
+
 	private double edgeDirectionCost(int sr,int sc,int dr,int dc){
 		Vector2d Dp = (new Vector2d(gradientrows[sr][sc],-gradientcolumns[sr][sc])).getUnit();
 		Vector2d Dq = (new Vector2d(gradientrows[dr][dc],-gradientcolumns[dr][dc])).getUnit();
@@ -232,6 +232,7 @@ public class LiveWireCosts implements Runnable{
 		}else{
 			L = p.sub(q).getUnit();
 		}
+		/*Barret 1996/1997 eqs 3 & 4*/
 		double edgeDirectionCostValue = 2.0/(3.0*Math.PI)*(Math.acos(Dp.dotProduct(L))+Math.acos(L.dotProduct(Dq)));
 		return edgeDirectionCostValue;
 	
@@ -241,7 +242,6 @@ public class LiveWireCosts implements Runnable{
 		//fg is the Gradient Magnitude
 		/*Debugging, test liveWire without gradient direction...*/
 		double edgeCostSum = gw*gradientr[dr][dc]+zw*laplacian[dr][dc];
-		double testi = edgeDirectionCost(sr,sc,dr,dc)*dw;
 		edgeCostSum+=edgeDirectionCost(sr,sc,dr,dc)*dw;
 		return edgeCostSum;
 	}
