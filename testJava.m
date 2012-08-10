@@ -7,7 +7,9 @@
     global lineHandle returnedPath liveWireEngine imagePixels digitizedPath;
     %dicomFileIn = 'IM000~10';
 %     dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\karsittu\kh1\18834435';
-    dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\livewireData\10022712\18830471';
+
+%     dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\livewireData\10022712\18830471';
+    dicomFileIn = 'C:\MyTemp\oma\Timon\tyo\SubchondralPilot\livewireData\10022712\18831575';
     imageInfo = dicominfo(dicomFileIn);
     imagePixels = double(dicomread(imageInfo));
     %Filter with Gaussian
